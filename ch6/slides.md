@@ -85,7 +85,7 @@ func (path Path) Distance() float64 {
 	fmt.Println(perim.Distance()) // 12
 
 ```
-* ```Println``문에서 컴파일러는 메소드명과 수신자(perim []Path) 타입으로 어떤 함수를 호출할지를 결정한다. 
+* ```Println```문에서 컴파일러는 메소드명과 수신자(perim []Path) 타입으로 어떤 함수를 호출할지를 결정한다. 
 * 그래서 위의 코드에서 path[i-1]는 Point 타입이므로 Point.Distance가 호출되고, 
 * perim의 경우 Path 타입이므로 Path.Distance가 호출된다. 
 * 특정 타입의 모든 메소드명을 유일해야 한다, 하지만 서로 다른 타입에서는 같은 메소드명을 사용할수 있다(메소드의 장점)
@@ -178,3 +178,77 @@ func (p Point) LocalScaleBy(factor float64) {
 
 ### 6.2.1 nil은 유효한 수신자 값
 * 일부 메소드도, 맵과 슬라이스와 같이 nil이 유의미한 제로값인 경우 인수로 nil 포인터를 사용한다. 
+
+```golang
+type IntList struct {
+	Value int
+	Tail  *IntList // 포인트 주소
+}
+
+//Sum 재귀함수
+func (list *IntList) Sum() int {
+	// 포인트 주소 list가 nil일 경우 처리, 빈 list
+	if list == nil {
+		return 0
+	}
+	return list.Value + list.Tail.Sum()
+}
+```
+
+* net/url 패키지의 Values 타입의 정의
+```golang
+package url
+
+// Values maps a string key to a list of values.
+type Values map[string][]string
+
+// Get returns the first value associated with the given key,
+// or "" if there are none.
+func (v Values) Get(key string) string {
+	if vs := v[key]; len(vs) > 0 {
+		return vs[0]
+	}
+	return ""
+}
+
+// Add adds the value to key.
+// It appends to any existing values associated with key.
+func (v Values) Add(key, value string) {
+	v[key] = append(v[key], value)
+}
+```
+
+```golang
+	//urlvalues
+	//net/url
+	// value는 string slice타입의 map
+	//type Values map[string][]string
+    m := url.Values{"lang": {"en"}} //리터럴 방식으로 직접생성
+    //이때는 m이 nil이 아니어서 append가능
+	m.Add("item", "1")
+	m.Add("item", "2") 
+
+	fmt.Println(m.Get("lang"))   // "en"
+	fmt.Println(m.Get("q"))      // "" 해당 키의 값은 len 0
+	fmt.Println(m.Get("item"))   // "1" vs[0]
+	fmt.Println(m["item"])       // "[1, 2]" 직접 맵 값 접근
+	fmt.Printf("%v %#v %p\n", m, m, m) // map[item:[1 2] lang:[en]] url.Values{"item":[]string{"1", "2"}, "lang":[]string{"en"}} 0xc00007a030
+	m = nil                      // nil로 초기화
+	fmt.Println(m.Get("item"))   // "" nil map의 len 0 이다. 
+	fmt.Printf("%v %#v %p\n", m, m, m) // map[] url.Values(nil) 0x0
+    //m.Add("item", "3") // nil 맵(map[])을 변경하려고 해서 panic. nil 맵은 주소공간만 할당된 것으로 주소값이 없다.
+
+    //아래처럼 해줘야함
+    m = url.Values{"item": {"3"}} // 이렇게하면 nil이 아닌 새로운 객체가 들어감(리터럴을 이용한 초기화)
+    //아래처럼 make 함수를 사용해도 됨 
+    //m = make(url.Values))
+    //m.Add("item", "3")
+	fmt.Println(m.Get("item")) // "3"
+```
+* ```m = nil```에서 처럼 nil map으로 초기화 되면, 다시 선언해 주지 않으면 메소드 호출이 안됨, 
+* 왜냐하면 url.Values가 map type인데 이게 nil map이 됐음(map type zero value)
+* 그래서 실제로 메모리가 할당된 hashmap의 주소가 없기 때문에 메소드도 사용할 수 없음(Get이 왜 됐냐면 nil map의 len은 0이다.)
+* 리터럴 혹은 make 함수로 새로운 map을 만들고 그것의 주소를 할당해 줘야함
+
+
+## 6.3 내장 구조체를 통한 타입조합

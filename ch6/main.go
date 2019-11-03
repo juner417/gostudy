@@ -2,12 +2,15 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 
+	"github.com/juner417/gostudy/ch6/coloredpoint"
+	customurl "github.com/juner417/gostudy/ch6/customurl"
 	"github.com/juner417/gostudy/ch6/geometry"
 )
 
 //IntList 는 정수의 링크드 리스트
-// nil *IntList는 빈 목록을 표시함
+// nil *IntList는 빈 목록을 표시함 <-- 요렇게 주석으로 적어줘라
 type IntList struct {
 	Value int
 	Tail  *IntList // 포인트 주소
@@ -98,5 +101,42 @@ func main() {
 	pptr.Distance(q) // 묵시적으로 *pptr(pp1.Point{1,2})을 취함.
 
 	//########### 6.2.1 ###########
+	fmt.Println("## 6.2.1 result ##")
+	//urlvalues
+	//net/url
+	// value는 string slice타입의 map
+	//type Values map[string][]string
+	m := url.Values{"lang": {"en"}} //직접생성
+	m.Add("item", "1")
+	m.Add("item", "2")
+
+	fmt.Println("m lang key has ->", m.Get("lang"))  // "en"
+	fmt.Println("m lang q has ->", m.Get("q"))       // "" 해당 키의 값은 len 0
+	fmt.Println("m lang item has ->", m.Get("item")) // "1" vs[0]
+	fmt.Println("m[item] ->", m["item"])             // "[1, 2]" 직접 맵 값 접근
+	fmt.Printf("m map info: %v %#v %p\n", m, m, m)   // map[item:[1 2] lang:[en]] url.Values{"item":[]string{"1", "2"}, "lang":[]string{"en"}} 0xc00007a030
+	m = nil                                          // nil로 초기화
+	fmt.Println(m.Get("item"))                       // "" nil map의 len 0 이다.
+	fmt.Printf("nil map info: %v %#v %p\n", m, m, m) // map[] url.Values(nil) 0x0
+	//m.Add("item", "3") // nil 맵(map[])을 변경하려고 해서 panic. nil 맵은 주소공간만 할당된 것으로 주소값이 없다.
+	//아래처럼 해줘야함
+	m = url.Values{"item": {"3"}}                        // 이렇게하면 nil이 아닌 새로운 객체가 들어감
+	fmt.Println("new m item key has -> ", m.Get("item")) // "3"
+
+	// customurl에 Add 메소드에 nil 일때 처리 하려고 했는데 그럴려면 values를 포인터로 받아야 함...
+	var t customurl.Values                                       // 이렇게하면 nil 값이 제로값으로 들어감
+	fmt.Printf("t customurl.Values info : %v %#v %p\n", t, t, t) // nil 값
+	t = make(customurl.Values)                                   // make 함수로 nil map 초기화 리터럴 방식도 가능
+	t.Add("lang", "en")                                          // nil 처리는 됐는데 values가 일반 변수라 call-by-value로 들어가서 지역변수로 처리
+	t.Add("item", "1")                                           // nil 처리는 됐는데 values가 일반 변수라 call-by-value로 들어가서 지역변수로 처리
+	//t = customurl.Values{"lang": {"ko", "jp"}} // 리터럴 방식
+	fmt.Println("key lang value: ", t.Get("lang"))
+	fmt.Println("key item value: ", t.Get("item"))
+
+	//########### 6.3 ###########
+	fmt.Println("## 6.3 result ##")
+
+	var cp coloredpoint.ColoredPoint
+	cp.X = 1
 
 }
