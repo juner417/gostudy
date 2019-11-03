@@ -5,7 +5,7 @@
 * 객체지향 프로그램은 메소드를 통해 데이터 구조의 특성과 동작을 표현하므로 , 사용자는 객체의 구현에 직접 접근할 필요가 없다. 
 
 ## 6.1 메소드 선언
-* 메소드는 일반 함수 선언을 변형해 함수명 앞에 부가적인 파라미터(reciever, reciever parameter)를 추가한 형태로 선언한다. 
+* 메소드는 일반 함수 선언을 변형해 함수명 앞에 부가적인 파라미터(reciever)를 추가한 형태로 선언한다. 
 
 [geometry](./geometry/geometry.go)
 ```golang
@@ -21,7 +21,7 @@ func Distance(p, q Point) float64 {
 }
 
 //Distance.. method for Point type
-// p is reciever
+// p is reciever, 수신자의 파라메터 타입은 뒤에 선언
 func (p Point) Distance(q Point) float64 {
 	return math.Hypot(q.X-p.X, q.Y-p.Y)
 }
@@ -32,6 +32,8 @@ func (p Point) Distance(q Point) float64 {
 ```golang
 //...
 func main() {
+    // 수신자의 인수 p, q 둘다 인수는 Point 타입
+    // var p Point
 	p := Point{1, 2}
 	q := Point{4, 6}
 
@@ -58,14 +60,14 @@ func (path Path) Distance() float64 {
 	for i := range path {
 		if i > 0 {
 			// point type Distance 메소드를 호출한다.
-            // (*path[i-1]).Distance(*path[i])
+            // (&path[i-1]).Distance(*path[i])
 			sum += path[i-1].Distance(path[i])
 		}
 	}
 	return sum
 }
 ```
-* point type Distance 메소드를 호출한다.
+* sum라인은 point type Distance 메소드를 호출한다.
 
 ```golang
 	perim := Path{
@@ -77,4 +79,91 @@ func (path Path) Distance() float64 {
     // "12", path type의 Distance 메소드 호출
 	fmt.Println(perim.Distance()) 
 ```
-* 
+* ```Println``문에서 컴파일러는 메소드명과 수신자(perim []Path) 타입으로 어떤 함수를 호출할지를 결정한다. 
+* 그래서 위의 코드에서 path[i-1]는 Point 타입이므로 Point.Distance가 호출되고, 
+* perim의 경우 Path 타입이므로 Path.Distance가 호출된다. 
+* 특정 타입의 모든 메소드명을 유일해야 한다, 하지만 서로 다른 타입에서는 같은 메소드명을 사용할수 있다(메소드의 장점)
+
+## 6.2 포인터 수신자가 있는 메소드
+* 함수를 호출하면 각 인수(변수) 값의 복사본이 생성되어 전달됨(golang 변수는 call-by-value가 기본)
+* 아래의 목적이 필요할 경우 포인터를 이용해 변수의 주소를 전달해야 함
+  * 함수에서 인수(변수) 값을 변경해야 할때
+  * 인수(변수)가 커서 가급적 복사하고 싶지 않을 때
+
+```golang
+//ScaleBy 주어진 값만큼 좌표 수정
+func (p *Point) ScaleBy(factor float64) {
+	p.X *= factor
+	p.Y *= factor
+}
+```
+* 이 메소드의 이름은 ```(*Point).Scaleby```: 포인터 수신자(pointer receiver)값은 Point 타입 구조체를 가리키고(*Point), 그것의 ScaleBy 메소드를 호출한다. 
+* 관행은 Point 구조체의 메소드 중 포인터 수신자가 있다면, 모든 메소드에도 포인터 수신자로 해야 한다...
+* 수신자(receiver)선언은 명명된 타입(Point)과 이 타입의 포인터(*Point)만 사용할수 있다. 
+
+* (*Point).ScaleBy 메소드는 *Point 타입 수신자(포인터 수신자)를 통해서 호출할수 있다. 
+* 하지만 메소드의 수신자 인수(변수)가(아래의 경우 r)가 *Point지만, 선언된 수신자가 *Point 타입이 아닐경우(Point), 컴파일러가 묵시적으로 수신자의 주소값을 가지고 참조한다. 
+```golang
+    r := &geometry.Point{1, 2} //r은 Point타입 구조체의 포인터인수(*Point타입의 포인터수신자 인수)
+    
+    //r(수신자 인수)이 아래같이 포인터인수(변수 *r)가 아닐때도 컴파일러는 r.ScaleBy(3)을 (&r).ScaleBy로 변경한다.
+	//r := geometry.Point{1, 2}
+	//r.ScaleBy(3) //(&r).ScaleBy(3) 과 동일
+
+	fmt.Println(*r) //{1,2}
+	r.ScaleBy(3)
+	//(&r).ScaleBy(3) // Error 이미 r이 포인터기 때문에 **r을 참조함. 이렇게 하려면 위 주석처럼 선언해야 함
+
+	fmt.Println(*r)    //{3,6}
+	r.LocalScaleBy(2) //call by value로 변경 안됨
+	fmt.Println(*r)    //{3,6}
+	// r  value, addr: geometry.Point{X:3, Y:6}, 0xc0000b0030
+	fmt.Printf("r value, addr: %v, %p\n", *r, r)
+
+	//case1
+	pp1 := geometry.Point{1, 2}
+	pptr := &pp1
+	pptr.ScaleBy(2) //pp1.ScaleBy(2) 도 가능
+	fmt.Println(pp1) //{2, 4}
+
+	//case2
+	pp2 := geometry.Point{1, 2}
+	(&pp2).ScaleBy(2) //pp2.ScaleBy(2) 도 가능
+	fmt.Println(pp2) // {2, 4}
+
+	// 위의 case1,2 처럼 하지 않아도 되는 것은 
+	// 수신자 인수(변수) pp1,pp2가 Point 타입의 변수지만, ScaleBy 메소드에 *Point 타입의 수신자 파라미터(포인터 수신자)가 필요할때 
+    // 컴파일러가 묵시적으로 &pp1, &pp2로 변경함
+    
+    pp3 := geometry.Point{1, 2}
+    pp3.ScaleBy(2)
+    // 이게 된다고.. 컴파일러가 해주니까... 그말을 풀어쓰느라 어렵게 쓴것임 쫄지마셈
+	fmt.Println(pp3)
+
+    //geometry.Point{1, 2}.ScaleBy(2) 
+    //주소가 할 당되지 않은 *Point 타입 수신자를 가진 메소드는 임시 값의 주소를 얻을수 없으므로 호출이 안됨.
+	//./main.go:49:22: cannot call pointer method on geometry.Point literal // ScaleBy는 포인터 수신자를 갖는 메소드인데 geometry.Point literal은 주소가 없음
+	//./main.go:49:22: cannot take the address of geometry.Point literal // 리터럴 타입은 주소를 가질수 없다. 받는 변수가 없어서
+
+```
+
+* 헷갈리기 쉬우니 한번 더 정리
+  * golang 컴파일러가 수신자 인수(변수)의 값, 주소값 종류별로 알아서 참조한다. 하지만 모든 경우는 아니므로 주의해야 함
+
+* 1. 수신자 인수(변수)의 타입과 수신자의 파라미터 타입이 갈을경우,
+```golang
+	geometry.Point{1, 2}.Distance(q) // Point type 메소드 Distance는 값으로 수신자에게 파라미터를 보냄
+	pptr.ScaleBy(2)                  // *Point type 메소드 ScaleBy는 포인터로 수신자에게 파라메터를 보냄 *pptr
+```
+
+* 2. 수신자 인수(변수)가 일반타입(T)이고, 파라미터가 포인터 수신자 타입일때(*T) 컴파일러가 묵시적으로 변수의 주소를 취함
+```golang
+	p.ScaleBy(2) // 묵시적으로 (&p)을 취함 (&p).ScaleBy(2)
+```
+
+* 3. 수신자 인수(변수)가 포인터 타입(*T)이고, 파라미터가 일반타입(T)일때 컴파일러가 묵시적으로 변수의 값을 역참조해 값을 읽음
+```golang
+    pptr.Distance(q) // 묵시적으로 *pptr(pp1.Point{1,2})을 취함.
+```
+
+
