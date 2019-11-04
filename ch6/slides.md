@@ -300,8 +300,8 @@ type ColoredPoint struct {
 ```golang
 //PColoredPoint ...
 type PColoredPoint struct {
-	*Point //anonymous field, 이것도 Point struct 필드와 메소드가 승격됨 refered(간접적으로)
-	Color  color.RGBA
+    *Point //anonymous field, 이것도 Point struct 필드와 메소드가 승격됨 refered(간접적으로)
+    Color  color.RGBA
 }
 ...
     // *Point
@@ -336,3 +336,82 @@ type PColoredPoint struct {
   * 그 다음에 내장된 Point와 RGBA에서 두번 승격된 메소드 순으로 찾는다.
 * 만약 같은 단계에 두개 이상의 메소드가 있어서 셀렉터로 선택할 수 없으면 오류
 
+
+## 6.4 메소드 값과 메소드 표현식
+[geometry](./geometry/geometry.go)
+* 아래의 코드에서 셀렉터 ```pp4.Distance``` 메소드(Point.Distance)를 특정 수신자값 pp4와 결합하는 함수인 메소드 값을 내보낸다(주소값). 
+```golang
+    pp4 := geometry.Point{1, 2}
+    qq4 := geometry.Point{4, 6}
+
+    distanceFromP := pp4.Distance
+    fmt.Printf("method value pp4.Distance -> %p\n", pp4.Distance)        // 메소드 값
+    fmt.Printf("distance between pp4 and qq4 %v \n", distanceFromP(qq4)) //"5"
+    var origin geometry.Point                                            // origin 선언 zero 값 {0,0}
+    fmt.Println(distanceFromP(origin))                                   // "2.23606797749979"
+
+    scaleP := pp4.ScaleBy // 메소드 값
+    scaleP(2)
+    fmt.Println(pp4) //{2,4} ScaleBy는 수신자 인수가 *Point 타입이다.
+    scaleP(3)
+    fmt.Println(pp4) //{6, 12}
+    scaleP(10)
+    fmt.Println(pp4) //{60, 120}
+    fmt.Printf("method value distanceFromP -> %p\n", distanceFromP)
+```
+* 이런 메소드 값은 
+  * 패키지 api가 함수 값을 호출하거나, time.AfterFunc(10 * time.second, r.Launch)
+  * 해당함수에서 특정 수신자의 메소드를 호출하려고 할때 유용하다.
+
+* **메소드값**은 **메소드 표현식**과 연관된다. 
+* 메소드를 호출할 때는 통상의 함수와 달리 특별히 셀렉터 문법 ```x.add``` 을 이용해 수신자를 지정해야 한다.
+* 타입 T에서 ```T.f```, ```(*T).f``` 로 작성하는 메소드 표현식은 
+* 통상적인 첫 번째 파라미터를 수신자로 받는 함수 값을 산출하므로 일반적인 방법으로 호출할 수 있다. 
+```golang
+    pp5 := geometry.Point{1, 2}
+    qq5 := geometry.Point{4, 6}
+
+    distance := geometry.Point.Distance                                                      // 메소드 표현식 - 수신자(Point)를 지정해야 한다.
+    fmt.Printf("distance -> %p, Point.Distance -> %p \n", distance, geometry.Point.Distance) // 주소 같음
+    fmt.Println(distance(pp5, qq5))                                                          //"5"
+    fmt.Printf("%T\n", distance)                                                             //func(geometry.Point, geometry.Point) float64
+
+    scale := (*geometry.Point).ScaleBy // 메소드 표현식
+    scale(&pp5, 2)                     // 수신자가 *Point 타입이라 주소값으로 첫번째 파라미터에 줌
+    fmt.Println(pp5)                   // "{2 4}"
+    fmt.Printf("%T\n", scale)          //func(*geometry.Point, float64)
+```
+
+* **메소드 표현식**은 한타입의 여러 메소드 중 하나를 선택하고
+* 선택한 메소드를 여러 수신자에서 호출할 때 도움이 된다. 
+[geometry](./geometry/geometry.go#L68)
+```golang
+type Point struct{ X, Y float64 }
+type Path []Point
+//...
+//Add ...
+func (p Point) Add(q Point) Point { return Point{p.X + q.X, p.Y + q.Y} }
+
+//Sub ...
+func (p Point) Sub(q Point) Point { return Point{p.X - q.X, p.Y - q.Y} }
+
+//TranslateBy ...
+func (path Path) TranslateBy(offset Point, add bool) Path {
+    var op func(p, q Point) Point // op 변수에 익명 함수 선언
+    if add {
+        op = Point.Add // 메소드 표현식
+    } else {
+        op = Point.Sub // 메소드 표현식
+    }
+    for i := range path {
+        // path[i].Add(offset) 또는 path[i].Sub(offset)을 호출한다.
+        path[i] = op(path[i], offset)
+    }
+    // fmt.Printf("%#v, %v \n", op, path) //for debuging
+    return path
+}
+```
+
+## 6.5 비트벡터 타입
+
+## 6.6 캡슐화

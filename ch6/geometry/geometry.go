@@ -64,3 +64,26 @@ func (p Point) LocalScaleBy(factor float64) {
 //	p.LocalScaleBy(2)
 //	fmt.Println(p) //{3,6}
 //}
+//-- 6.2 end
+//-- 6.4 start
+//Add ...
+func (p Point) Add(q Point) Point { return Point{p.X + q.X, p.Y + q.Y} }
+
+//Sub ...
+func (p Point) Sub(q Point) Point { return Point{p.X - q.X, p.Y - q.Y} }
+
+//TranslateBy ...
+func (path Path) TranslateBy(offset Point, add bool) Path {
+	var op func(p, q Point) Point // op 변수에 익명 함수 선언
+	if add {
+		op = Point.Add // 메소드 표현식
+	} else {
+		op = Point.Sub // 메소드 표현식
+	}
+	for i := range path {
+		// path[i].Add(offset) 또는 path[i].Sub(offset)을 호출한다.
+		path[i] = op(path[i], offset)
+	}
+	// fmt.Printf("%#v, %v \n", op, path) //for debuging
+	return path
+}

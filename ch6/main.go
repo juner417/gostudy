@@ -211,4 +211,47 @@ func main() {
 
 	//########### 6.4 ###########
 	fmt.Println("## 6.4 result ##")
+
+	// 셀렉터 pp4.Distance는 메소드(Point.Distance)를
+	// 특정 수신자값 pp4와 결합하는 함수인 메소드 값을 내보낸다. -> 주소겠지?
+	pp4 := geometry.Point{1, 2}
+	qq4 := geometry.Point{4, 6}
+
+	distanceFromP := pp4.Distance
+	fmt.Printf("method value pp4.Distance -> %p\n", pp4.Distance)        // 메소드 값
+	fmt.Printf("distance between pp4 and qq4 %v \n", distanceFromP(qq4)) //"5"
+	var origin geometry.Point                                            // origin 선언 zero 값 {0,0}
+	fmt.Println(distanceFromP(origin))                                   // "2.23606797749979"
+
+	scaleP := pp4.ScaleBy // 메소드 값
+	scaleP(2)
+	fmt.Println(pp4) //{2 4} ScaleBy는 수신자 인수가 *Point 타입이다.
+	scaleP(3)
+	fmt.Println(pp4) //{6 12}
+	scaleP(10)
+	fmt.Println(pp4) //{60 120}
+	fmt.Printf("method value distanceFromP -> %p\n", distanceFromP)
+
+	pp5 := geometry.Point{1, 2}
+	qq5 := geometry.Point{4, 6}
+
+	distance := geometry.Point.Distance                                                      // 메소드 표현식 - 수신자(Point)를 지정해야 한다.
+	fmt.Printf("distance -> %p, Point.Distance -> %p \n", distance, geometry.Point.Distance) // 주소 같음
+	fmt.Println(distance(pp5, qq5))                                                          //"5"
+	fmt.Printf("%T\n", distance)                                                             //func(geometry.Point, geometry.Point) float64
+
+	scale := (*geometry.Point).ScaleBy // 메소드 표현식
+	scale(&pp5, 2)                     // 수신자가 *Point 타입이라 주소값으로 첫번째 파라미터에 줌
+	fmt.Println(pp5)                   // "{2 4}"
+	fmt.Printf("%T\n", scale)          //func(*geometry.Point, float64)
+
+	// 메소드 표현식을 이용한 메소드 호출
+	ppath := geometry.Path{
+		{1, 1},
+		{5, 1},
+		{5, 4},
+		{1, 1},
+	}
+	fmt.Printf("Path.TranslateBy res -> %v\n", ppath.TranslateBy(geometry.Point{1, 1}, true))
+
 }
