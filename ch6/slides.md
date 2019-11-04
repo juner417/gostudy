@@ -252,4 +252,87 @@ func (v Values) Add(key, value string) {
 
 
 ## 6.3 내장 구조체를 통한 타입조합
+[coloredpoint](./coloredpoint/coloredpoint.go)
+```golang
+type Point struct{ X, Y float64 }
+
+//ColoredPoint ...
+type ColoredPoint struct {
+    Point //anonymous field, 익명필드
+    Color color.RGBA
+}
+```
+* 위처럼 Point 구조체를 ColoredPoint에 내장하여 Point의 필드를 사용가능하게 했다(내장 구조체)
+
+```golang
+    var cp coloredpoint.ColoredPoint // coloredpoint.ColoredPoint 선언
+    cp.X = 1
+    fmt.Println(cp.Point.X) // "1" 원래는 이렇게 접근해야 하지만
+    cp.Point.Y = 2
+    fmt.Println(cp.Y) // "2" 해당 구조체에 필드 타입이 annoymous field를 사용했다면 제거 가능함
+    // 단축문법으로 Point의 모든 필드와 추가필드를 갖는 ColoredPoint를 정의할수 있다.
+    // ref: http://golangtutorials.blogspot.com/2011/06/anonymous-fields-in-structs-like-object.html
+```
+* 원래는 ```cp.Point.X```로 지정해야 하나. 내장구조체를 anonymous field(익명필드)로 지정하면, 
+* 단축문법으로 Point 언급없이 선택할수 있음
+
+* 메소드도 동일한 방식으로 적용된다. 
+```golang
+    red := color.RGBA{255, 0, 0, 255}
+    blue := color.RGBA{0, 0, 255, 255}
+    var cp1 = coloredpoint.ColoredPoint{coloredpoint.Point{1, 1}, red}
+    var cp2 = coloredpoint.ColoredPoint{coloredpoint.Point{5, 4}, blue}
+    fmt.Println(cp1.Distance(cp2.Point)) // "5"
+    cp1.ScaleBy(2)
+    cp2.ScaleBy(2)
+    fmt.Println(cp1.Point.Distance(cp2.Point)) // "10" 이것도 Point 제거 가능, 하지만 cp2.Point는 제거 불가능. is-a 관계가 아니다.
+    //cp1.Distance(cp2) // 불가능
+    //이러한 방식으로 많은 메소드가 있는 복잡한 타입을,
+    //소수의 메소드를 갖는 여러 필드의 조합으로 만들수 있게 한다.
+    //ColoredPoint는 Point가 아니지만, Point를 갖고(has-a)있고,
+    //Point에서 승격된 두개의 추가 메소드(Distance, ScaleBy)를 갖고있다.
+```
+* ```cp1.Point.Distance(cp2.Point)``` 의 Point도 익명필드로 지정되었기 때문에 제거가 가능하다. 
+* 이러한 방식으로 많은 메소드가 있는 복잡한 타입을, 소수의 메소드를 갖는 여러 필드의 조합으로 만들수 있게 한다.
+
+* 익명필드의 타입은 명명된 타입의 포인터가 될수 있다. 
+* 아래의 경우도 Point struct 필드와 메소드가 승격됨 refered(간접적으로)
+```golang
+//PColoredPoint ...
+type PColoredPoint struct {
+	*Point //anonymous field, 이것도 Point struct 필드와 메소드가 승격됨 refered(간접적으로)
+	Color  color.RGBA
+}
+...
+    // *Point
+    cp3 := coloredpoint.PColoredPoint{&coloredpoint.Point{1, 1}, red}
+    cp4 := coloredpoint.PColoredPoint{&coloredpoint.Point{5, 4}, blue}
+    fmt.Println(cp3.Distance(*cp4.Point)) //*cp4.Point{5,4} 이 필요함.
+    cp4.Point = cp3.Point                 // cp3의 Point주소(&cp3.Point)를 넘겨줌
+    cp3.ScaleBy(2)                        // "{2, 2}" cp3의 값을 변경하면, cp4도 변경됨. 윗줄에서 cp4.Point에 cp3.Point 주소값을 주었기 때문에.
+    fmt.Println(*cp3.Point, *cp4.Point)   //"{2,2}" "{2,2}"
+```
+
+* 구조체의 타입은 두개 이상의 익명필드를 가질수 있다. 
+* 아래와 같이 선언된 구조체에서는 아래의 필드와 메소드가 승격된다. 
+  * 이 타입의 값은 Point의 모든 메소드와
+  * RGBA의 모든 메소드
+  * DColoredPoint에 정의된 추가 메소드들을 직접갖게 된다.
+```golang
+    // 두개 이상의 익명필드를 가질수 있고, 아래와 같이 선언 됐다면
+    //DColoredPoint ...
+    //type DColoredPoint struct {
+    //    Point
+    //    color.RGBA
+    //}
+
+    dp := coloredpoint.DColoredPoint{coloredpoint.Point{1, 1}, red}
+    dp.ScaleBy(2)
+```
+
+* ```dp.ScaleBy``` 와 같은 셀렉터를 메소드로 연결할때 컴파일러가 승격된 필드와 메소드를 찾는 순서
+  * 직접 ScaleBy로 선언된 메소드
+  * 그다음 DColoredPoint에 내장된 필드에서 승격된 메소드
+  * 그 다음에 내장된 Point와 RGBA에서 두번 승격된 메소드 순으로 찾는다.
+* 만약 같은 단계에 두개 이상의 메소드가 있어서 셀렉터로 선택할 수 없으면 오류
 
