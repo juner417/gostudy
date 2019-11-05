@@ -9,6 +9,7 @@ import (
 	"github.com/juner417/gostudy/ch6/coloredpoint"
 	customurl "github.com/juner417/gostudy/ch6/customurl"
 	"github.com/juner417/gostudy/ch6/geometry"
+	"github.com/juner417/gostudy/ch6/intset"
 )
 
 //IntList 는 정수의 링크드 리스트
@@ -254,4 +255,20 @@ func main() {
 	}
 	fmt.Printf("Path.TranslateBy res -> %v\n", ppath.TranslateBy(geometry.Point{1, 1}, true))
 
+	//########### 6.5 ###########
+	fmt.Println("## 6.5 result ##")
+
+	var x, y intset.IntSet
+	x.Add(1) //
+	x.Add(144)
+	x.Add(9)
+	fmt.Println(x.String()) // "{1 9 144}"
+
+	y.Add(9)
+	y.Add(42)
+	fmt.Println(y.String()) // "{9 42}"
+
+	x.UnionWith(&y)
+	fmt.Println(x.String())           // "{1 9 42 144}"
+	fmt.Println(x.Has(9), x.Has(123)) // "true false"
 }

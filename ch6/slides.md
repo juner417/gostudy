@@ -383,8 +383,9 @@ type PColoredPoint struct {
 ```
 
 * **메소드 표현식**은 한타입의 여러 메소드 중 하나를 선택하고
-* 선택한 메소드를 여러 수신자에서 호출할 때 도움이 된다. 
+* 선택한 메소드를 여러 수신자에서 호출할 때 도움이 된다.   
 [geometry](./geometry/geometry.go#L68)
+
 ```golang
 type Point struct{ X, Y float64 }
 type Path []Point
@@ -413,5 +414,20 @@ func (path Path) TranslateBy(offset Point, add bool) Path {
 ```
 
 ## 6.5 비트벡터 타입
+```golang
+    var x, y intset.IntSet
+    x.Add(1) //
+    x.Add(144)
+    x.Add(9)
+    fmt.Println(x.String()) // "{1 9 144}"
+
+    y.Add(9)
+    y.Add(42)
+    fmt.Println(y.String()) // "{9 42}"
+
+    x.UnionWith(&y)
+    fmt.Println(x.String())           // "{1 9 42 144}"
+    fmt.Println(x.Has(9), x.Has(123)) // "true false"
+```
 
 ## 6.6 캡슐화
