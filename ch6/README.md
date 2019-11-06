@@ -450,7 +450,7 @@ func (path Path) TranslateBy(offset Point, add bool) Path {
 
     // Encapsulation 할때 구조체로 안할경우, 직접 객체의 데이터에 접근할수 있으므로
     // 아래의 코드가 가능... Encapsulation 안됨
-    z := intset.Intsset{1, 2, 3, 4}
+    z := intset.IntsetN{1, 2, 3, 4}
     fmt.Printf("%v\n", z) //[1,2,3,4]
     z = append(z, 100)
     fmt.Printf("%v\n", z) //[1 2 3 4 100] 이러면 뭐...

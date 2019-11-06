@@ -11,7 +11,7 @@ type IntSet struct {
 }
 
 //Intsset wrong encapsulation
-type Intsset []uint64
+type IntSetN []uint64
 
 //Has ...
 func (s *IntSet) Has(x int) bool {
