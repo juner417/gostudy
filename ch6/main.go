@@ -271,4 +271,24 @@ func main() {
 	x.UnionWith(&y)
 	fmt.Println(x.String())           // "{1 9 42 144}"
 	fmt.Println(x.Has(9), x.Has(123)) // "true false"
+
+	//########### 6.6 ###########
+	//fmt.Println("## 6.6 result ##")
+	//
+	// 아래의 코드는 불가능...
+	// intset package 의 구조체의 word 필드는 외부로 노출되지 않았다.(소문자)
+	// Add, Has, UniWith 등의 메소드로만 이 필드는 접근,변경 가능하다(Encapsulation)
+	//zz := intset.IntSet{
+	//	[]uint64{1, 2, 3, 4},
+	//}
+	//fmt.Println(zz)
+	//./main.go:282:11: implicit assignment of unexported field 'words' in intset.IntSet literal
+
+	// Encapsulation 할때 구조체로 안할경우, 직접 객체의 데이터에 접근할수 있으므로
+	// 아래의 코드가 가능...
+	z := intset.Intsset{1, 2, 3, 4}
+	fmt.Printf("%v\n", z) //[1,2,3,4]
+	z = append(z, 100)
+	fmt.Printf("%v\n", z) //[1 2 3 4 100] 이러면 뭐...
+
 }

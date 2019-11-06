@@ -10,6 +10,9 @@ type IntSet struct {
 	words []uint64
 }
 
+//Intsset wrong encapsulation
+type Intsset []uint64
+
 //Has ...
 func (s *IntSet) Has(x int) bool {
 	word, bit := x/64, uint(x%64)

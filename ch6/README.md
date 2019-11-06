@@ -435,9 +435,26 @@ func (path Path) TranslateBy(offset Point, add bool) Path {
 * 객체의 사용자가 객체의 변수나 메소드에 접근할 수 없는 경우 -> 캡슐화되어 있다.(캡슐화 -> 정보은닉)
 * golang에서는 패키지 레벨의 캡슐화가 된다.(타입이 아님)
 * 대문자로 시작하는 메소드는 정의된 패키지에서 노출된다.
-* 대문자가 아니면 노출되지 않는다. 
+* 대문자가 아니면 노출되지 않는다.(구조체의 필드, 타입의 메소드 모두 동일한 방식으로 적용)
 * 패키지의 멤버에 대한 접근 제한은 구조체의 필드나 타입의 메소드에도 적용된다. 
-* 객체를 캡슐화 하려면 구조체로 만들어야 한다. 
+* 객체를 캡슐화 하려면 구조체로 만들어서 필드명을 노출시키지 않아야 한다. 
+```golang
+    // 아래의 코드는 불가능...
+    // intset package 의 구조체의 word 필드는 외부로 노출되지 않았다.(소문자)
+    // Add, Has, UniWith 등의 메소드로만 이 필드는 접근,변경 가능하다(Encapsulation)
+    zz := intset.IntSet{
+        []uint64{1, 2, 3, 4},
+    }
+    fmt.Println(zz) 
+    //./main.go:282:11: implicit assignment of unexported field 'words' in intset.IntSet literal
+
+    // Encapsulation 할때 구조체로 안할경우, 직접 객체의 데이터에 접근할수 있으므로
+    // 아래의 코드가 가능... Encapsulation 안됨
+    z := intset.Intsset{1, 2, 3, 4}
+    fmt.Printf("%v\n", z) //[1,2,3,4]
+    z = append(z, 100)
+    fmt.Printf("%v\n", z) //[1 2 3 4 100] 이러면 뭐...
+```
 
 ### 6.6.1 캡슐화의 장점
 1. 사용자가 직접 객체 변수를 수정할 수 없다. 
